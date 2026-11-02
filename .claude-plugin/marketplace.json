@@ -1,0 +1,15 @@
+{
+  "name": "fsti-plugins",
+  "description": "Plugins und Skills für das Team des Ferdinand-Steinbeis-Instituts",
+  "owner": {
+    "name": "Paul Herbst",
+    "url": "https://github.com/paul-hbst-fsti"
+  },
+  "plugins": [
+    {
+      "name": "twenty-kontakte",
+      "source": "./plugins/twenty-kontakte",
+      "description": "Kontakte in Twenty CRM anlegen und pflegen: Visitenkarte oder Texteingabe, Webrecherche, Dublettenprüfung, Bestätigung vor dem Anlegen"
+    }
+  ]
+}
