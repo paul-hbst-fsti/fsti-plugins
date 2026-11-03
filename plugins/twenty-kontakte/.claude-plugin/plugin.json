@@ -1,7 +1,7 @@
 {
   "name": "twenty-kontakte",
   "displayName": "Twenty Kontakte",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Kontakte in Twenty CRM anlegen und pflegen: aus Visitenkarten-Foto oder Texteingabe, mit kurzer Webrecherche, Dublettenprüfung, Firmenzuordnung und Bestätigung durch den Nutzer.",
   "author": {
     "name": "Paul Herbst",

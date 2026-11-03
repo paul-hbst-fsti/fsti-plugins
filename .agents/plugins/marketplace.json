@@ -1,0 +1,20 @@
+{
+  "name": "fsti-plugins",
+  "interface": {
+    "displayName": "FSTI Plugins"
+  },
+  "plugins": [
+    {
+      "name": "twenty-kontakte",
+      "source": {
+        "source": "local",
+        "path": "./plugins/twenty-kontakte"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -9,6 +9,12 @@ Dieser Skill gilt, wenn der Nutzer eine Visitenkarte hochlädt, einen Kontakt pe
 
 Grundregel: **Nichts wird in Twenty geschrieben, bevor der Nutzer den Vorschlag bestätigt hat.** Lesen, suchen und recherchieren ist vorher erlaubt.
 
+## Rückfragen und Werkzeuge
+
+Dieser Skill läuft in Claude und in ChatGPT/Codex. "Auswahlfrage" heißt: Nutze das Rückfrage-Werkzeug der Umgebung mit klickbaren Optionen, falls es eines gibt. Gibt es keines oder sind weniger Optionen möglich, stelle die Optionen als nummerierte Liste im Chat und warte auf die Antwort. Der Nutzer kann immer auch frei antworten.
+
+Die Tools `learn_tools`, `find_many_*`, `create_one_*`, `update_one_*` und `execute_tool` stammen vom Twenty-MCP-Server. Fehlt die Verbindung zu Twenty, sag das und schreibe nichts. Ohne Websuche entfällt die Recherche; weise kurz darauf hin.
+
 ## Pflichtfelder und Workflow
 
 Im Workspace läuft der Workflow "Pflichtfelder Personen prüfen". Er markiert Personen ohne **Unternehmen, Vorname, Nachname oder E-Mail**, erinnert den Ersteller per Aufgabe nach 1 Tag und dann wöchentlich und löscht den Kontakt nach 4 Wochen.
@@ -18,7 +24,7 @@ Der Nutzer muss im Dialog nichts angeben, was er nicht will. Fehlt beim Anlegen 
 ## Ablauf A: Visitenkarte als Bild
 
 1. **Auslesen.** Alle Angaben aus dem Bild extrahieren: Anrede, Vorname, Nachname, Titel, Position, Firma, Abteilung, E-Mail(s), Telefon und Mobil, Adresse, Website, LinkedIn. Rückseite beachten, falls mitgeschickt. Unsichere Zeichen (0/O, l/1, rn/m in E-Mail-Adressen) markieren statt raten.
-2. **Kurz recherchieren** (WebSearch, standard, 1 bis 3 Suchen): Firmenwebsite und Domain, Branche, ggf. LinkedIn-Profil der Person, aktuelle Position. Nur berufliche, öffentlich zugängliche Informationen. Keine privaten Daten (Wohnort, Familie, private Social-Media-Profile). Widersprüche zur Karte benennen (z. B. Person hat laut LinkedIn inzwischen die Firma gewechselt).
+2. **Kurz recherchieren** (Websuche, 1 bis 3 Suchen): Firmenwebsite und Domain, Branche, ggf. LinkedIn-Profil der Person, aktuelle Position. Nur berufliche, öffentlich zugängliche Informationen. Keine privaten Daten (Wohnort, Familie, private Social-Media-Profile). Widersprüche zur Karte benennen (z. B. Person hat laut LinkedIn inzwischen die Firma gewechselt).
 3. **Twenty abgleichen** (siehe unten: Dubletten und Firmenzuordnung).
 4. **Vorschlag zeigen** und bestätigen lassen (siehe "Vorschlag präsentieren").
 5. **Anlegen** nach Bestätigung.
@@ -26,20 +32,20 @@ Der Nutzer muss im Dialog nichts angeben, was er nicht will. Fehlt beim Anlegen 
 ## Ablauf B: Texteingabe ohne Bild
 
 1. Übernimm, was der Nutzer genannt hat.
-2. Fehlen Kernangaben, frag einmal kompakt im Chat nach: "Magst du noch ergänzen: Unternehmen, Vorname, Nachname, E-Mail, Telefon? Alles optional." Freitextfelder werden im Chat abgefragt, nicht über AskUserQuestion, weil das Tool nur Auswahloptionen kennt.
+2. Fehlen Kernangaben, frag einmal kompakt im Chat nach: "Magst du noch ergänzen: Unternehmen, Vorname, Nachname, E-Mail, Telefon? Alles optional." Freitextfelder werden im Chat abgefragt, nicht über eine Auswahlfrage, weil diese nur feste Optionen kennt.
 3. Wenn genug für eine Suche da ist (Name plus Firma oder E-Mail-Domain), kurze Recherche wie in Ablauf A.
 4. Weiter mit Dubletten, Firmenzuordnung, Vorschlag, Anlegen.
 
 ## Firmenzuordnung (Dropdown-Ersatz)
 
-AskUserQuestion erlaubt pro Frage höchstens 4 Optionen plus automatisch "Other" für Freitext. Eine vollständige Firmenliste als Dropdown geht deshalb nicht. Stattdessen:
+Eine Auswahlfrage hat höchstens 4 Optionen; freie Antworten sind zusätzlich möglich. Eine vollständige Firmenliste als Dropdown geht deshalb nicht. Stattdessen:
 
 1. Mit dem Firmennamen bzw. der E-Mail-Domain in Twenty suchen:
    - `find_many_companies` mit `name: { ilike: "%<Kernbegriff>%" }` (Rechtsform wie GmbH, AG, e.V. weglassen, ggf. mehrere Varianten probieren)
    - zusätzlich nach Domain: `domainName: { primaryLinkUrl: { ilike: "%<domain>%" } }`
 2. Ergebnis:
    - **genau ein eindeutiger Treffer**: im Vorschlag direkt verwenden, nicht extra fragen.
-   - **mehrere Treffer**: AskUserQuestion mit bis zu 3 besten Treffern (Label: Firmenname, Beschreibung: Domain/Ort) plus Option "Neue Firma anlegen".
+   - **mehrere Treffer**: Auswahlfrage mit bis zu 3 besten Treffern (Label: Firmenname, Beschreibung: Domain/Ort) plus Option "Neue Firma anlegen".
    - **kein Treffer**: im Vorschlag "Neue Firma anlegen: <Name>, <Domain>, Branche <Vorschlag>" aufführen.
    - **Firma unbekannt** (Texteingabe ohne Firma): im Chat fragen; der Nutzer kann auch "ohne Firma" sagen.
 
@@ -56,7 +62,7 @@ Gibt es einen Treffer, nicht neu anlegen, sondern zeigen: "Existiert bereits: <N
 
 ## Vorschlag präsentieren
 
-Kompakte Übersicht im Chat, dann eine AskUserQuestion zur Bestätigung.
+Kompakte Übersicht im Chat, dann eine Auswahlfrage zur Bestätigung.
 
 ```
 **Neuer Kontakt**
@@ -73,13 +79,13 @@ Unsicher: <z. B. E-Mail-Zeichen schlecht lesbar>
 Fehlt: <Pflichtfelder, die fehlen>
 ```
 
-Bestätigungsfrage (AskUserQuestion), z. B. Header "Anlegen?":
+Bestätigungsfrage (Auswahlfrage), z. B. "Anlegen?":
 - "Passt, anlegen"
 - "Kategorie/Status ändern"
 - "Ohne Rechercheangaben anlegen"
-- (Other für Korrekturen im Freitext)
+- (Korrekturen sind als freie Antwort möglich)
 
-Wenn Kategorie oder Kontaktstatus unklar sind, kann eine zweite Frage im selben AskUserQuestion-Aufruf sie direkt abfragen (max. 4 Optionen, die wahrscheinlichsten zuerst).
+Wenn Kategorie oder Kontaktstatus unklar sind, kann eine zweite Auswahlfrage sie direkt mit abfragen (max. 4 Optionen, die wahrscheinlichsten zuerst).
 
 ## Anlegen in Twenty
 
@@ -106,7 +112,7 @@ Nach dem Anlegen: eine Zeile Rückmeldung mit Name, Firma und Hinweis auf fehlen
 
 ## Kontakte pflegen
 
-- **Ändern**: Person suchen, bei mehreren Treffern per AskUserQuestion auswählen lassen, Änderungen als Vorher/Nachher zeigen, nach Bestätigung `update_one_person`.
+- **Ändern**: Person suchen, bei mehreren Treffern per Auswahlfrage auswählen lassen, Änderungen als Vorher/Nachher zeigen, nach Bestätigung `update_one_person`.
 - **Firmenwechsel**: neue Firma zuordnen, alte Firma und Position in einer Notiz festhalten ("bis 11/2026 bei X als Y"), alte E-Mail in `additionalEmails`.
 - **Mehrere Visitenkarten auf einmal**: jede einzeln auslesen, dann eine gesammelte Tabelle zur Bestätigung zeigen, Dubletten und unsichere Felder markieren, danach gesammelt anlegen.
 - **Löschen oder Zusammenführen**: nur auf ausdrückliche Anweisung und mit Bestätigung, welcher Datensatz bleibt.
