@@ -13,7 +13,7 @@ Grundregel: **Nichts wird in Twenty geschrieben, bevor der Nutzer den Vorschlag 
 
 Dieser Skill läuft in Claude und in ChatGPT/Codex. "Auswahlfrage" heißt: Nutze das Rückfrage-Werkzeug der Umgebung mit klickbaren Optionen, falls es eines gibt. Gibt es keines oder sind weniger Optionen möglich, stelle die Optionen als nummerierte Liste im Chat und warte auf die Antwort. Der Nutzer kann immer auch frei antworten.
 
-Die Tools `learn_tools`, `find_many_*`, `create_one_*`, `update_one_*` und `execute_tool` stammen vom Twenty-MCP-Server. Fehlt die Verbindung zu Twenty, sag das und schreibe nichts. Ohne Websuche entfällt die Recherche; weise kurz darauf hin.
+Die Tools `learn_tools`, `find_many_*`, `create_one_*`, `update_one_*` und `execute_tool` stammen vom Twenty-MCP-Server. Das Plugin bringt die Verbindung zur FSTI-Instanz mit. Beim ersten Aufruf meldet sich der Nutzer per OAuth im Browser an. Fehlt die Verbindung oder schlägt die Anmeldung fehl, sag das und schreibe nichts. Ohne Websuche entfällt die Recherche; weise kurz darauf hin.
 
 ## Pflichtfelder und Workflow
 

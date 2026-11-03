@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Erzeugt die ChatGPT/Codex-Manifeste aus den Claude-Manifesten.
 // Quelle: .claude-plugin/marketplace.json und plugins/<name>/.claude-plugin/plugin.json
-// Ziel:   .agents/plugins/marketplace.json und plugins/<name>/plugin.json
+//         sowie plugins/<name>/.mcp.json, falls vorhanden
+// Ziel:   .agents/plugins/marketplace.json, plugins/<name>/plugin.json und plugins/<name>/mcp.json
 // Aufruf: node scripts/sync-manifests.mjs          schreibt die Dateien
 //         node scripts/sync-manifests.mjs --check  prüft nur, Exit-Code 1 bei Abweichung
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -11,6 +12,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
 const schema = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json";
+const mcpSchema = "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json";
 const nameRule = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 
 const readJson = (path) => JSON.parse(readFileSync(join(root, path), "utf8"));
@@ -61,6 +63,23 @@ for (const entry of marketplace.plugins) {
     },
   };
   outputs.set(join(dir, "plugin.json"), render(portable));
+
+  if (existsSync(join(root, dir, ".mcp.json"))) {
+    const servers = readJson(join(dir, ".mcp.json")).mcpServers;
+    const mcpServers = {};
+    for (const [serverName, server] of Object.entries(servers)) {
+      if (server.type !== "http" || !server.url?.startsWith("https://")) {
+        fail(`${dir}: MCP-Server "${serverName}" muss vom Typ http mit HTTPS-URL sein`);
+      }
+      if (server.headers) fail(`${dir}: MCP-Server "${serverName}" darf keine Header enthalten (Repo ist öffentlich)`);
+      mcpServers[serverName] = {
+        type: "streamable-http",
+        url: server.url,
+        extensions: { "com.openai": { auth: { type: "oauth", client: { mode: "dcr" } } } },
+      };
+    }
+    outputs.set(join(dir, "mcp.json"), render({ $schema: mcpSchema, mcpServers }));
+  }
 }
 
 for (const [path, content] of outputs) {

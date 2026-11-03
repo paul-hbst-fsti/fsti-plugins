@@ -38,7 +38,7 @@ Workspace-Admins können das Repo in ChatGPT unter Workspace settings > Plugins 
 
 ## Voraussetzungen
 
-- Verbindung zu einem Twenty-CRM-Workspace über den Twenty-MCP-Server
+- Zugang zur Twenty-Instanz des FSTI. Das Plugin `twenty-kontakte` liefert den MCP-Server mit, beim ersten Aufruf meldest du dich per OAuth im Browser an
 - Für die Recherche: Websuche in Claude oder ChatGPT aktiviert
 
 ## Aufbau
@@ -49,6 +49,8 @@ Skills liegen einmal unter `plugins/<name>/skills/` und gelten für beide Plattf
 | :- | :- | :- |
 | Claude | `.claude-plugin/marketplace.json` (von Hand) | `plugins/<name>/.claude-plugin/plugin.json` (von Hand) |
 | ChatGPT/Codex | `.agents/plugins/marketplace.json` (erzeugt) | `plugins/<name>/plugin.json` (erzeugt) |
+
+MCP-Server stehen in `plugins/<name>/.mcp.json` und werden nach `mcp.json` übertragen. Das Repo ist öffentlich, also nur OAuth verwenden und keine Schlüssel oder Header eintragen.
 
 Erzeugte Dateien nicht von Hand ändern. Skills in neutraler Sprache schreiben, also keine Tool-Namen einer einzelnen Plattform verwenden.
 
