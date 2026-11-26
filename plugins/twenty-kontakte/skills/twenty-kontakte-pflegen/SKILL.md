@@ -13,7 +13,16 @@ Grundregel: **Nichts wird in Twenty geschrieben, bevor der Nutzer den Vorschlag 
 
 Dieser Skill läuft in Claude und in ChatGPT/Codex. "Auswahlfrage" heißt: Nutze das Rückfrage-Werkzeug der Umgebung mit klickbaren Optionen, falls es eines gibt. Gibt es keines oder sind weniger Optionen möglich, stelle die Optionen als nummerierte Liste im Chat und warte auf die Antwort. Der Nutzer kann immer auch frei antworten.
 
-Die Tools `learn_tools`, `find_many_*`, `create_one_*`, `update_one_*` und `execute_tool` stammen vom Twenty-MCP-Server. Das Plugin bringt die Verbindung zur FSTI-Instanz mit. Beim ersten Aufruf meldet sich der Nutzer per OAuth im Browser an. Fehlt die Verbindung oder schlägt die Anmeldung fehl, sag das und schreibe nichts. Ohne Websuche entfällt die Recherche; weise kurz darauf hin.
+Die Tools `learn_tools`, `find_many_*`, `create_one_*`, `update_one_*` und `execute_tool` stammen vom Twenty-MCP-Server. Die FSTI-Kürzel kommen aus dem Intranet (Strapi-MCP, Inhaltstyp `shorthand`, z. B. `list_shorthand` mit `pageSize: 100`, `status: published`; Felder `abbreviation` und `meaning`). Das Plugin bringt die Verbindung zur FSTI-Instanz mit. Beim ersten Aufruf meldet sich der Nutzer per OAuth im Browser an. Fehlt die Verbindung oder schlägt die Anmeldung fehl, sag das und schreibe nichts. Ohne Websuche entfällt die Recherche; weise kurz darauf hin.
+
+## Kürzel verwenden
+
+In Notizen und Freitexten in Twenty werden FSTI-Personen, Organisationen und Begriffe mit ihren Kürzeln aus dem Intranet bezeichnet, nicht mit vollem Namen. Beispiele: "HPA" statt "Paul", "LH" statt "Heiner Lasi", "FSTI", "PK" für Projekt.
+
+- Kürzelliste einmal pro Session aus dem Intranet laden, bevor eine Notiz geschrieben wird.
+- Den Nutzer selbst mit seinem eigenen Kürzel bezeichnen (z. B. "HPA hat X am 25.11.2026 kennengelernt").
+- Gibt es für eine Person oder einen Begriff kein Kürzel, den Namen ausschreiben und nichts erfinden.
+- Ist das Intranet nicht verbunden oder nicht erreichbar, Namen ausschreiben und kurz darauf hinweisen.
 
 ## Pflichtfelder und Workflow
 
@@ -49,7 +58,9 @@ Eine Auswahlfrage hat höchstens 4 Optionen; freie Antworten sind zusätzlich m�
    - **kein Treffer**: im Vorschlag "Neue Firma anlegen: <Name>, <Domain>, Branche <Vorschlag>" aufführen.
    - **Firma unbekannt** (Texteingabe ohne Firma): im Chat fragen; der Nutzer kann auch "ohne Firma" sagen.
 
-Beim Neuanlegen einer Firma: `name`, `domainName.primaryLinkUrl` (https://...), `branche` aus den vorhandenen Optionen wählen (BILDUNG_FORSCHUNG, IT_DIENSTLEITUNGEN, INDUSTRIE_PRODUKTION, DIENSLEITUNGEN_HANDWERK, GESUNDHEIT_SOZIALES, FINANZEN_VERSICHERUNGEN, BAU_IMMOBILIEN, LOGISTIK_VERKEHR, OFFENTLICHER_SEKTOR_NON_PROFIT, ENERGIE_UMWELT, LAND_FORSTWIRTSCHAFT, PRESSE, MEDIENWIRTSCHAFT, HOLZINDUSTRIE), Adresse falls bekannt. Optionen im Zweifel per `learn_tools(create_one_company)` aktuell prüfen.
+Beim Neuanlegen einer Firma: `name`, `domainName.primaryLinkUrl` (https://...), `branche` aus den vorhandenen Optionen wählen (BILDUNG_FORSCHUNG, IT, INDUSTRIE_PRODUKTION, DIENSLEITUNGEN_HANDWERK, DIENSLEISTUNGEN, GESUNDHEIT_SOZIALES, FINANZEN_VERSICHERUNGEN, BAU_IMMOBILIEN, LOGISTIK_VERKEHR, OFFENTLICHER_SEKTOR_NON_PROFIT, ENERGIE_UMWELT, LAND_FORSTWIRTSCHAFT, PRESSE, MEDIENWIRTSCHAFT, HOLZINDUSTRIE), Adresse falls bekannt, `infosZumUnternehmen` mit 1 bis 2 Sätzen aus der Recherche. Optionen im Zweifel per `learn_tools(create_one_company)` aktuell prüfen.
+
+Firmen werden in Twenty oft automatisch aus der E-Mail-Domain angelegt (Name = Domain, z. B. "mpg.de") oder später umbenannt. Den Firmennamen deshalb direkt vor dem Vorschlag frisch abfragen und nicht aus einer früheren Abfrage übernehmen. Ist eine solche Domain-Firma die einzige Zuordnung, im Vorschlag anbieten, sie zu ergänzen (Name, https-Website, Branche, Adresse, Infos). Vorher prüfen, welche Personen an der Firma hängen (`find_many_people` mit `companyId`), damit eine Umbenennung keine anderen Kontakte falsch zuordnet. Führende oder doppelte Leerzeichen im Namen bereinigen.
 
 ## Dublettenprüfung
 
@@ -59,6 +70,16 @@ Vor jedem Anlegen in Twenty suchen:
 - nach Name: `name: { firstName: { ilike: "<vorname>" }, lastName: { ilike: "<nachname>" } }`
 
 Gibt es einen Treffer, nicht neu anlegen, sondern zeigen: "Existiert bereits: <Name>, <Firma>, <E-Mail>. Soll ich ihn mit den neuen Angaben aktualisieren?" Bei Aktualisierung nur Felder überschreiben, die leer sind oder die der Nutzer ausdrücklich ändern will. Alte E-Mail oder Telefonnummer in `additionalEmails` bzw. `additionalPhones` verschieben statt löschen.
+
+## Vorhandene Notizen lesen (Pflicht vor jeder Aktualisierung)
+
+Bevor ein vorhandener Kontakt aktualisiert oder eine Notiz angelegt wird, immer die zugehörigen Notizen holen und lesen:
+
+1. `find_many_note_targets` mit `targetPersonId: { eq: <personId> }`, `select: ["noteId", "note"]`. Dasselbe für die zugeordnete Firma mit `targetCompanyId`.
+2. Die gefundenen Notizen über ihre `noteId`s mit `title` und `bodyV2` vollständig lesen (`find_many_notes`).
+3. Im Vorschlag kurz zeigen, was schon da ist (Titel, Datum, 1 Zeile Inhalt).
+4. Gibt es schon eine Notiz zum selben Anlass oder Kennenlernen, keine zweite anlegen, sondern vorschlagen, die vorhandene zu ergänzen (`update_one_note`, bestehenden Text unverändert lassen und neuen Absatz anhängen). Eine neue Notiz nur, wenn es um einen neuen Anlass geht oder der Nutzer das will.
+5. Inhalte aus vorhandenen Notizen (Anlass, Kontext, beteiligte Personen) für den Vorschlag nutzen, statt erneut nachzufragen.
 
 ## Vorschlag präsentieren
 
@@ -72,7 +93,9 @@ Firma: Musterwerke GmbH (vorhanden in Twenty) | (neu: musterwerke.de, Industrie/
 E-Mail: max.mustermann@musterwerke.de
 Telefon: +49 711 123456 · Mobil: +49 170 1234567
 LinkedIn: linkedin.com/in/... (aus Recherche)
-Kategorie: Projektpartner (Vorschlag) · Status: In Kontakt · Priorität: offen
+Kategorie: Projektpartner (Vorschlag) · Status: offen · Priorität: offen
+Vorhandene Notizen: <Titel, Datum> | keine
+Notiz: <neu: Text mit Kürzeln> | <Ergänzung zu vorhandener Notiz: Text>
 
 Aus der Recherche: <1 bis 3 Sätze, mit Quelle>
 Unsicher: <z. B. E-Mail-Zeichen schlecht lesbar>
@@ -100,19 +123,19 @@ Person (`create_one_person`), Feldzuordnung:
 - `phones`: `{ primaryPhoneNumber: "711123456", primaryPhoneCallingCode: "+49", primaryPhoneCountryCode: "DE", additionalPhones: [{ number, callingCode, countryCode }] }`. Festnetz als primär, Mobil als zusätzlich, außer der Nutzer will es andersherum. Führende 0 bei der Nummer entfernen, wenn eine Vorwahl gesetzt ist.
 - `linkedinLink`: `{ primaryLinkUrl: "https://..." }` nur bei sicherer Zuordnung
 - `companyId`: ID der gewählten oder neu angelegten Firma (Firma zuerst anlegen)
-- `kategorie`: FSTI_MITARBEITER_IN, DIENSTLEISTER_FSTI, ANKERTHEMEN, PROJEKTPARTNER, NETZWERKPARTNER, PRESSEKONTAKT
-- `kontaktstatus`: IM_PROJEKT, IN_KONTAKT, INAKTIV, KONTAKTAUFNAHME_GEPLANT (bei frisch übergebener Visitenkarte meist IN_KONTAKT)
+- `kategorie` (Mehrfachauswahl, Array): FSTI_MITARBEITER_IN, DIENSLEISTER_FSTI, PROJEKTPARTNER, POTENZIELLER_PROJEKTPARTNER, NETZWERKPARTNER, AIOT, SKALIERUNG, DATEN_INFORMATIONSOKONOMIE, ECOSYSTEM, COSMOS_PARTNER. Nur setzen, wenn der Nutzer eine wählt; "keine Kategorie" ist eine gültige Antwort.
+- `kontaktstatus`: KONTAKTAUFNAHME_GEPLANT, IM_KONTAKT, PROJEKTANBAHNUNG, IM_PROJEKT, INAKTIV. Nicht automatisch setzen, auch nicht nach einem persönlichen Kennenlernen; im Vorschlag als offen führen und nur auf Angabe des Nutzers setzen.
 - `prioritat`: A, B, C nur wenn der Nutzer es angibt
 - `sperrvermerk`, `nachsteUberprufung`, `letzteUberprufung`: nur auf ausdrücklichen Wunsch
 - `unvollstaendigSeit`: nie selbst setzen, das macht der Workflow
 
-Kontext zur Begegnung ("getroffen auf der Hannover Messe am 12.11.", Gesprächsinhalt) als Notiz anlegen (`create_one_note` mit `bodyV2.markdown`) und per `note_target` mit der Person verknüpfen. Das Visitenkartenbild auf Wunsch als Anhang an die Person hängen.
+Kontext zur Begegnung ("getroffen auf der Hannover Messe am 12.11.", Gesprächsinhalt) als Notiz festhalten, mit Kürzeln formuliert (z. B. "HPA hat X am 25.11.2026 kennengelernt. Im Rahmen von Vortrag LH bei ..."). Erst die vorhandenen Notizen prüfen (siehe "Vorhandene Notizen lesen"); nur wenn keine passende existiert, neu anlegen (`create_one_note` mit `title` und `bodyV2.markdown`) und per `create_one_note_target` mit `targetPersonId` verknüpfen. Anlass und Gesprächsinhalt im Chat erfragen, bevor die Notiz geschrieben wird, statt eine Platzhalter-Notiz anzulegen. Das Visitenkartenbild auf Wunsch als Anhang an die Person hängen.
 
 Nach dem Anlegen: eine Zeile Rückmeldung mit Name, Firma und Hinweis auf fehlende Pflichtfelder, falls vorhanden.
 
 ## Kontakte pflegen
 
-- **Ändern**: Person suchen, bei mehreren Treffern per Auswahlfrage auswählen lassen, Änderungen als Vorher/Nachher zeigen, nach Bestätigung `update_one_person`.
+- **Ändern**: Person suchen, bei mehreren Treffern per Auswahlfrage auswählen lassen, vorhandene Notizen von Person und Firma lesen, Änderungen als Vorher/Nachher zeigen, nach Bestätigung `update_one_person`.
 - **Firmenwechsel**: neue Firma zuordnen, alte Firma und Position in einer Notiz festhalten ("bis 11/2026 bei X als Y"), alte E-Mail in `additionalEmails`.
 - **Mehrere Visitenkarten auf einmal**: jede einzeln auslesen, dann eine gesammelte Tabelle zur Bestätigung zeigen, Dubletten und unsichere Felder markieren, danach gesammelt anlegen.
 - **Löschen oder Zusammenführen**: nur auf ausdrückliche Anweisung und mit Bestätigung, welcher Datensatz bleibt.
@@ -123,3 +146,5 @@ Nach dem Anlegen: eine Zeile Rückmeldung mit Name, Firma und Hinweis auf fehlen
 - Keine Recherche über das Berufliche hinaus.
 - Keine erfundenen Daten: was weder auf der Karte steht noch in der Recherche belegt ist, bleibt leer.
 - Keine Gedankenstriche (em dashes) in Texten an den Nutzer oder in Notizen.
+- Keine Aktualisierung und keine neue Notiz, ohne vorher die vorhandenen Notizen gelesen zu haben.
+- Keine vollen Namen von FSTI-Personen in Notizen, wenn es ein Kürzel gibt.
