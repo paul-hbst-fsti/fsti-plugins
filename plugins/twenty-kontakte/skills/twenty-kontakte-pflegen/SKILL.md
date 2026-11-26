@@ -114,6 +114,7 @@ E-Mail: max.mustermann@musterwerke.de
 Telefon: +49 711 123456 · Mobil: +49 170 1234567
 LinkedIn: linkedin.com/in/... (aus Recherche)
 Kategorie: Projektpartner (Vorschlag) · Status: offen · Priorität: offen
+Hauptansprechpartner FSTI: <Name des Nutzers> (Vorschlag)
 Vorhandene Notizen: <Titel, Datum> | keine
 Notiz: <neu: Text mit Kürzeln> | <Ergänzung zu vorhandener Notiz: Text>
 
@@ -127,6 +128,8 @@ Bestätigungsfrage (Auswahlfrage), z. B. "Anlegen?":
 - "Kategorie/Status ändern"
 - "Ohne Rechercheangaben anlegen"
 - (Korrekturen sind als freie Antwort möglich)
+
+Den Hauptansprechpartner FSTI immer mit abfragen. Vorschlag ist die Person, die den Kontakt gerade anlegt. In der Bestätigungsfrage eine Option wie "Passt, <Name> als Hauptansprechpartner" anbieten, andere FSTI-Personen nennt der Nutzer frei.
 
 Wenn Kategorie oder Kontaktstatus unklar sind, kann eine zweite Auswahlfrage sie direkt mit abfragen (max. 4 Optionen, die wahrscheinlichsten zuerst).
 
@@ -146,6 +149,7 @@ Person (`create_one_person`), Feldzuordnung:
 - `kategorie` (Mehrfachauswahl, Array): FSTI_MITARBEITER_IN, DIENSLEISTER_FSTI, PROJEKTPARTNER, POTENZIELLER_PROJEKTPARTNER, NETZWERKPARTNER, AIOT, SKALIERUNG, DATEN_INFORMATIONSOKONOMIE, ECOSYSTEM, COSMOS_PARTNER. Nur setzen, wenn der Nutzer eine wählt; "keine Kategorie" ist eine gültige Antwort.
 - `kontaktstatus`: KONTAKTAUFNAHME_GEPLANT, IM_KONTAKT, PROJEKTANBAHNUNG, IM_PROJEKT, INAKTIV. Nicht automatisch setzen, auch nicht nach einem persönlichen Kennenlernen; im Vorschlag als offen führen und nur auf Angabe des Nutzers setzen.
 - `prioritat`: A, B, C nur wenn der Nutzer es angibt
+- `fstiHauptansprechpartnerId`: ID des Workspace-Mitglieds, das den Kontakt hauptsächlich betreut (viele Kontakte können dieselbe Person haben). Standard ist der Nutzer, der anlegt. Die Mitglieder mit `find_many_workspace_members` (`name`, `userEmail`) laden und den Nutzer über Name oder E-Mail zuordnen; ist das nicht eindeutig, einmal nachfragen. Nennt der Nutzer jemand anderen, dessen ID nehmen. Bei bestehenden Kontakten nur ändern, wenn das Feld leer ist oder der Nutzer es will.
 - `sperrvermerk`, `nachsteUberprufung`, `letzteUberprufung`: nur auf ausdrücklichen Wunsch
 - `unvollstaendigSeit`: nie selbst setzen, das macht der Workflow
 
