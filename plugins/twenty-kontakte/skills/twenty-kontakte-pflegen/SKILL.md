@@ -68,15 +68,15 @@ Eine gelöschte Firma liegt im Papierkorb und blockiert ihre Domain weiter. Soll
 
 ### Workflow "Create company when adding a new person"
 
-Im Workspace läuft ein Workflow, der bei jedem Anlegen einer Person und bei jeder Änderung ihrer E-Mail die Domain der primären E-Mail nimmt und eine Firma sucht, deren **Haupt-Domain** (`domainName.primaryLinkUrl`) diese Domain enthält. Zweite Domains (`secondaryLinks`) prüft er nicht. Findet er eine Firma, hängt er die Person dort ein, auch wenn schon eine andere Firma gesetzt war. Findet er keine, legt er eine neue Firma mit der Domain als Name an (z. B. "bundeswehr.org") und hängt die Person dort ein. Private Mail-Adressen (gmail, web.de usw.) lässt er aus.
+Im Workspace läuft ein Workflow, der beim Anlegen einer Person und bei jeder Änderung ihrer E-Mail startet, aber nur für Personen **ohne Firma** und mit geschäftlicher Mail (private wie gmail oder web.de lässt er aus). Er nimmt die Domain der primären E-Mail und sucht eine Firma, deren **Haupt-Domain** (`domainName.primaryLinkUrl`) diese Domain enthält. Zweite Domains (`secondaryLinks`) prüft er nicht. Findet er eine, hängt er die Person dort ein. Findet er keine, legt er eine Firma mit der Domain als Name an (z. B. "bundeswehr.org").
 
-Damit keine Dubletten entstehen:
+Damit der Workflow trotzdem richtig arbeitet:
 
-1. **Vor dem Vorschlag** die E-Mail-Domain der Person mit der Haupt-Domain der Zielfirma vergleichen. Website-Domain und Mail-Domain unterscheiden sich oft (bundeswehr.de vs. bundeswehr.org, ip.ai vs. ipai-foundation.ai).
-2. **Neue Firma:** Die E-Mail-Domain als `primaryLinkUrl` eintragen. Weicht die Website ab, kommt sie als `secondaryLinks` dazu. Im Vorschlag so zeigen: "Domain: bundeswehr.org (Mail), Website: bundeswehr.de".
-3. **Vorhandene Firma mit anderer Haupt-Domain:** Im Vorschlag darauf hinweisen, dass der Workflow die Person sonst umhängt oder eine Domain-Firma anlegt. Optionen anbieten: Haupt-Domain der Firma auf die Mail-Domain umstellen (alte Domain als `secondaryLinks` behalten) oder bewusst in Kauf nehmen und danach korrigieren. Gibt es schon eine Domain-Firma zur Mail-Domain (Name = Domain), landet die Person dort, nicht in einer neuen.
-4. **Nach dem Anlegen** und nach jeder E-Mail-Änderung die Person nach etwa 5 Sekunden erneut lesen (`companyId`) und mit `find_many_companies` nach neuen Firmen zur Domain suchen. Hat der Workflow umgehängt oder eine Firma angelegt, dem Nutzer melden und vorschlagen, die Person zurückzuhängen. Die Domain-Firma nur auf ausdrücklichen Wunsch löschen und vorher prüfen, dass niemand mehr daran hängt.
-5. Ein späteres Zurückhängen (`update_one_person` nur mit `companyId`) löst den Workflow nicht aus, weil er nur auf E-Mail-Änderungen reagiert. Deshalb die E-Mail beim Zurückhängen nicht mitschicken.
+1. **Personen immer mit `companyId` anlegen**, wenn die Firma feststeht. Dann greift der Workflow nicht.
+2. **Neue Firma:** Die E-Mail-Domain als `primaryLinkUrl` eintragen. Weicht die Website ab, kommt sie als `secondaryLinks` dazu. Im Vorschlag so zeigen: "Domain: bundeswehr.org (Mail), Website: bundeswehr.de". Website-Domain und Mail-Domain unterscheiden sich oft (bundeswehr.de vs. bundeswehr.org, ip.ai vs. ipai-foundation.ai).
+3. **Vorhandene Firma mit anderer Haupt-Domain:** Im Vorschlag anbieten, die Haupt-Domain auf die Mail-Domain umzustellen (alte Domain als `secondaryLinks` behalten). Sonst legt der Workflow beim nächsten Kontakt dieser Firma ohne Zuordnung eine Domain-Firma an.
+4. **Person ohne Firma anlegen** (Nutzer will "ohne Firma"): darauf hinweisen, dass der Workflow sie per Mail-Domain zuordnet oder eine Domain-Firma anlegt. Nach etwa 5 Sekunden `companyId` erneut lesen und das Ergebnis melden.
+5. Gibt es eine Domain-Firma (Name = Domain, vom Workflow angelegt) neben der echten Firma: Personen zur echten Firma umhängen, die Domain-Firma nur auf ausdrücklichen Wunsch löschen und vorher prüfen, dass niemand mehr daran hängt. Danach muss der Nutzer sie im Papierkorb endgültig löschen, bevor die echte Firma die Domain als Haupt-Domain bekommen kann.
 
 ### Domain-Firmen
 
