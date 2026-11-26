@@ -60,6 +60,26 @@ Eine Auswahlfrage hat höchstens 4 Optionen; freie Antworten sind zusätzlich m�
 
 Beim Neuanlegen einer Firma: `name`, `domainName.primaryLinkUrl` (https://...), `branche` aus den vorhandenen Optionen wählen (BILDUNG_FORSCHUNG, IT, INDUSTRIE_PRODUKTION, DIENSLEITUNGEN_HANDWERK, DIENSLEISTUNGEN, GESUNDHEIT_SOZIALES, FINANZEN_VERSICHERUNGEN, BAU_IMMOBILIEN, LOGISTIK_VERKEHR, OFFENTLICHER_SEKTOR_NON_PROFIT, ENERGIE_UMWELT, LAND_FORSTWIRTSCHAFT, PRESSE, MEDIENWIRTSCHAFT, HOLZINDUSTRIE), Adresse falls bekannt, `infosZumUnternehmen` mit 1 bis 2 Sätzen aus der Recherche. Optionen im Zweifel per `learn_tools(create_one_company)` aktuell prüfen.
 
+### Eine Firma pro Domain
+
+In Twenty ist die Haupt-Domain einer Firma eindeutig, eine Domain gehört also zu genau einer Firma. Die Firma ist deshalb die Organisation hinter der Mail-Domain, nicht eine Abteilung, Dienststelle, ein Institut oder Standort. Beispiel: Karte "Planungsamt der Bundeswehr, Referat Zukunftsanalyse" mit Mail @bundeswehr.org ergibt die Firma "Bundeswehr" (bundeswehr.org). "Planungsamt der Bundeswehr, Referat ..." gehört in `jobTitle` der Person. Eine eigene Firma für eine Untereinheit nur dann, wenn sie eine eigene Mail-Domain hat. Die Adresse einer Dienststelle nicht als Firmenadresse eintragen, wenn die Firma die Gesamtorganisation ist.
+
+Eine gelöschte Firma liegt im Papierkorb und blockiert ihre Domain weiter. Soll eine andere Firma diese Domain bekommen, muss der Nutzer die gelöschte Firma vorher in Twenty endgültig aus dem Papierkorb entfernen. Über den MCP-Server geht das nicht.
+
+### Workflow "Create company when adding a new person"
+
+Im Workspace läuft ein Workflow, der beim Anlegen einer Person und bei jeder Änderung ihrer E-Mail startet, aber nur für Personen **ohne Firma** und mit geschäftlicher Mail (private wie gmail oder web.de lässt er aus). Er nimmt die Domain der primären E-Mail und sucht eine Firma, deren **Haupt-Domain** (`domainName.primaryLinkUrl`) diese Domain enthält. Zweite Domains (`secondaryLinks`) prüft er nicht. Findet er eine, hängt er die Person dort ein. Findet er keine, legt er eine Firma mit der Domain als Name an (z. B. "bundeswehr.org").
+
+Damit der Workflow trotzdem richtig arbeitet:
+
+1. **Personen immer mit `companyId` anlegen**, wenn die Firma feststeht. Dann greift der Workflow nicht.
+2. **Neue Firma:** Die E-Mail-Domain als `primaryLinkUrl` eintragen. Weicht die Website ab, kommt sie als `secondaryLinks` dazu. Im Vorschlag so zeigen: "Domain: bundeswehr.org (Mail), Website: bundeswehr.de". Website-Domain und Mail-Domain unterscheiden sich oft (bundeswehr.de vs. bundeswehr.org, ip.ai vs. ipai-foundation.ai).
+3. **Vorhandene Firma mit anderer Haupt-Domain:** Im Vorschlag anbieten, die Haupt-Domain auf die Mail-Domain umzustellen (alte Domain als `secondaryLinks` behalten). Sonst legt der Workflow beim nächsten Kontakt dieser Firma ohne Zuordnung eine Domain-Firma an.
+4. **Person ohne Firma anlegen** (Nutzer will "ohne Firma"): darauf hinweisen, dass der Workflow sie per Mail-Domain zuordnet oder eine Domain-Firma anlegt. Nach etwa 5 Sekunden `companyId` erneut lesen und das Ergebnis melden.
+5. Gibt es eine Domain-Firma (Name = Domain, vom Workflow angelegt) neben der echten Firma: Personen zur echten Firma umhängen, die Domain-Firma nur auf ausdrücklichen Wunsch löschen und vorher prüfen, dass niemand mehr daran hängt. Danach muss der Nutzer sie im Papierkorb endgültig löschen, bevor die echte Firma die Domain als Haupt-Domain bekommen kann.
+
+### Domain-Firmen
+
 Firmen werden in Twenty oft automatisch aus der E-Mail-Domain angelegt (Name = Domain, z. B. "mpg.de") oder später umbenannt. Den Firmennamen deshalb direkt vor dem Vorschlag frisch abfragen und nicht aus einer früheren Abfrage übernehmen. Ist eine solche Domain-Firma die einzige Zuordnung, im Vorschlag anbieten, sie zu ergänzen (Name, https-Website, Branche, Adresse, Infos). Vorher prüfen, welche Personen an der Firma hängen (`find_many_people` mit `companyId`), damit eine Umbenennung keine anderen Kontakte falsch zuordnet. Führende oder doppelte Leerzeichen im Namen bereinigen.
 
 ## Dublettenprüfung
@@ -94,6 +114,7 @@ E-Mail: max.mustermann@musterwerke.de
 Telefon: +49 711 123456 · Mobil: +49 170 1234567
 LinkedIn: linkedin.com/in/... (aus Recherche)
 Kategorie: Projektpartner (Vorschlag) · Status: offen · Priorität: offen
+Hauptansprechpartner FSTI: <Name des Nutzers> (Vorschlag)
 Vorhandene Notizen: <Titel, Datum> | keine
 Notiz: <neu: Text mit Kürzeln> | <Ergänzung zu vorhandener Notiz: Text>
 
@@ -107,6 +128,8 @@ Bestätigungsfrage (Auswahlfrage), z. B. "Anlegen?":
 - "Kategorie/Status ändern"
 - "Ohne Rechercheangaben anlegen"
 - (Korrekturen sind als freie Antwort möglich)
+
+Den Hauptansprechpartner FSTI immer mit abfragen. Vorschlag ist die Person, die den Kontakt gerade anlegt. In der Bestätigungsfrage eine Option wie "Passt, <Name> als Hauptansprechpartner" anbieten, andere FSTI-Personen nennt der Nutzer frei.
 
 Wenn Kategorie oder Kontaktstatus unklar sind, kann eine zweite Auswahlfrage sie direkt mit abfragen (max. 4 Optionen, die wahrscheinlichsten zuerst).
 
@@ -126,6 +149,7 @@ Person (`create_one_person`), Feldzuordnung:
 - `kategorie` (Mehrfachauswahl, Array): FSTI_MITARBEITER_IN, DIENSLEISTER_FSTI, PROJEKTPARTNER, POTENZIELLER_PROJEKTPARTNER, NETZWERKPARTNER, AIOT, SKALIERUNG, DATEN_INFORMATIONSOKONOMIE, ECOSYSTEM, COSMOS_PARTNER. Nur setzen, wenn der Nutzer eine wählt; "keine Kategorie" ist eine gültige Antwort.
 - `kontaktstatus`: KONTAKTAUFNAHME_GEPLANT, IM_KONTAKT, PROJEKTANBAHNUNG, IM_PROJEKT, INAKTIV. Nicht automatisch setzen, auch nicht nach einem persönlichen Kennenlernen; im Vorschlag als offen führen und nur auf Angabe des Nutzers setzen.
 - `prioritat`: A, B, C nur wenn der Nutzer es angibt
+- `fstiHauptansprechpartnerId`: ID des Workspace-Mitglieds, das den Kontakt hauptsächlich betreut (viele Kontakte können dieselbe Person haben). Standard ist der Nutzer, der anlegt. Die Mitglieder mit `find_many_workspace_members` (`name`, `userEmail`) laden und den Nutzer über Name oder E-Mail zuordnen; ist das nicht eindeutig, einmal nachfragen. Nennt der Nutzer jemand anderen, dessen ID nehmen. Bei bestehenden Kontakten nur ändern, wenn das Feld leer ist oder der Nutzer es will.
 - `sperrvermerk`, `nachsteUberprufung`, `letzteUberprufung`: nur auf ausdrücklichen Wunsch
 - `unvollstaendigSeit`: nie selbst setzen, das macht der Workflow
 
