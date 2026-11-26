@@ -60,6 +60,20 @@ Eine Auswahlfrage hat höchstens 4 Optionen; freie Antworten sind zusätzlich m�
 
 Beim Neuanlegen einer Firma: `name`, `domainName.primaryLinkUrl` (https://...), `branche` aus den vorhandenen Optionen wählen (BILDUNG_FORSCHUNG, IT, INDUSTRIE_PRODUKTION, DIENSLEITUNGEN_HANDWERK, DIENSLEISTUNGEN, GESUNDHEIT_SOZIALES, FINANZEN_VERSICHERUNGEN, BAU_IMMOBILIEN, LOGISTIK_VERKEHR, OFFENTLICHER_SEKTOR_NON_PROFIT, ENERGIE_UMWELT, LAND_FORSTWIRTSCHAFT, PRESSE, MEDIENWIRTSCHAFT, HOLZINDUSTRIE), Adresse falls bekannt, `infosZumUnternehmen` mit 1 bis 2 Sätzen aus der Recherche. Optionen im Zweifel per `learn_tools(create_one_company)` aktuell prüfen.
 
+### Workflow "Create company when adding a new person"
+
+Im Workspace läuft ein Workflow, der bei jedem Anlegen einer Person und bei jeder Änderung ihrer E-Mail die Domain der primären E-Mail nimmt und eine Firma sucht, deren **Haupt-Domain** (`domainName.primaryLinkUrl`) diese Domain enthält. Zweite Domains (`secondaryLinks`) prüft er nicht. Findet er eine Firma, hängt er die Person dort ein, auch wenn schon eine andere Firma gesetzt war. Findet er keine, legt er eine neue Firma mit der Domain als Name an (z. B. "bundeswehr.org") und hängt die Person dort ein. Private Mail-Adressen (gmail, web.de usw.) lässt er aus.
+
+Damit keine Dubletten entstehen:
+
+1. **Vor dem Vorschlag** die E-Mail-Domain der Person mit der Haupt-Domain der Zielfirma vergleichen. Website-Domain und Mail-Domain unterscheiden sich oft (bundeswehr.de vs. bundeswehr.org, ip.ai vs. ipai-foundation.ai).
+2. **Neue Firma:** Die E-Mail-Domain als `primaryLinkUrl` eintragen. Weicht die Website ab, kommt sie als `secondaryLinks` dazu. Im Vorschlag so zeigen: "Domain: bundeswehr.org (Mail), Website: bundeswehr.de".
+3. **Vorhandene Firma mit anderer Haupt-Domain:** Im Vorschlag darauf hinweisen, dass der Workflow die Person sonst umhängt oder eine Domain-Firma anlegt. Optionen anbieten: Haupt-Domain der Firma auf die Mail-Domain umstellen (alte Domain als `secondaryLinks` behalten) oder bewusst in Kauf nehmen und danach korrigieren. Gibt es schon eine Domain-Firma zur Mail-Domain (Name = Domain), landet die Person dort, nicht in einer neuen.
+4. **Nach dem Anlegen** und nach jeder E-Mail-Änderung die Person nach etwa 5 Sekunden erneut lesen (`companyId`) und mit `find_many_companies` nach neuen Firmen zur Domain suchen. Hat der Workflow umgehängt oder eine Firma angelegt, dem Nutzer melden und vorschlagen, die Person zurückzuhängen. Die Domain-Firma nur auf ausdrücklichen Wunsch löschen und vorher prüfen, dass niemand mehr daran hängt.
+5. Ein späteres Zurückhängen (`update_one_person` nur mit `companyId`) löst den Workflow nicht aus, weil er nur auf E-Mail-Änderungen reagiert. Deshalb die E-Mail beim Zurückhängen nicht mitschicken.
+
+### Domain-Firmen
+
 Firmen werden in Twenty oft automatisch aus der E-Mail-Domain angelegt (Name = Domain, z. B. "mpg.de") oder später umbenannt. Den Firmennamen deshalb direkt vor dem Vorschlag frisch abfragen und nicht aus einer früheren Abfrage übernehmen. Ist eine solche Domain-Firma die einzige Zuordnung, im Vorschlag anbieten, sie zu ergänzen (Name, https-Website, Branche, Adresse, Infos). Vorher prüfen, welche Personen an der Firma hängen (`find_many_people` mit `companyId`), damit eine Umbenennung keine anderen Kontakte falsch zuordnet. Führende oder doppelte Leerzeichen im Namen bereinigen.
 
 ## Dublettenprüfung
