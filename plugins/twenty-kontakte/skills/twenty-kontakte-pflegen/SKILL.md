@@ -60,6 +60,12 @@ Eine Auswahlfrage hat höchstens 4 Optionen; freie Antworten sind zusätzlich m�
 
 Beim Neuanlegen einer Firma: `name`, `domainName.primaryLinkUrl` (https://...), `branche` aus den vorhandenen Optionen wählen (BILDUNG_FORSCHUNG, IT, INDUSTRIE_PRODUKTION, DIENSLEITUNGEN_HANDWERK, DIENSLEISTUNGEN, GESUNDHEIT_SOZIALES, FINANZEN_VERSICHERUNGEN, BAU_IMMOBILIEN, LOGISTIK_VERKEHR, OFFENTLICHER_SEKTOR_NON_PROFIT, ENERGIE_UMWELT, LAND_FORSTWIRTSCHAFT, PRESSE, MEDIENWIRTSCHAFT, HOLZINDUSTRIE), Adresse falls bekannt, `infosZumUnternehmen` mit 1 bis 2 Sätzen aus der Recherche. Optionen im Zweifel per `learn_tools(create_one_company)` aktuell prüfen.
 
+### Eine Firma pro Domain
+
+In Twenty ist die Haupt-Domain einer Firma eindeutig, eine Domain gehört also zu genau einer Firma. Die Firma ist deshalb die Organisation hinter der Mail-Domain, nicht eine Abteilung, Dienststelle, ein Institut oder Standort. Beispiel: Karte "Planungsamt der Bundeswehr, Referat Zukunftsanalyse" mit Mail @bundeswehr.org ergibt die Firma "Bundeswehr" (bundeswehr.org). "Planungsamt der Bundeswehr, Referat ..." gehört in `jobTitle` der Person. Eine eigene Firma für eine Untereinheit nur dann, wenn sie eine eigene Mail-Domain hat. Die Adresse einer Dienststelle nicht als Firmenadresse eintragen, wenn die Firma die Gesamtorganisation ist.
+
+Eine gelöschte Firma liegt im Papierkorb und blockiert ihre Domain weiter. Soll eine andere Firma diese Domain bekommen, muss der Nutzer die gelöschte Firma vorher in Twenty endgültig aus dem Papierkorb entfernen. Über den MCP-Server geht das nicht.
+
 ### Workflow "Create company when adding a new person"
 
 Im Workspace läuft ein Workflow, der bei jedem Anlegen einer Person und bei jeder Änderung ihrer E-Mail die Domain der primären E-Mail nimmt und eine Firma sucht, deren **Haupt-Domain** (`domainName.primaryLinkUrl`) diese Domain enthält. Zweite Domains (`secondaryLinks`) prüft er nicht. Findet er eine Firma, hängt er die Person dort ein, auch wenn schon eine andere Firma gesetzt war. Findet er keine, legt er eine neue Firma mit der Domain als Name an (z. B. "bundeswehr.org") und hängt die Person dort ein. Private Mail-Adressen (gmail, web.de usw.) lässt er aus.
